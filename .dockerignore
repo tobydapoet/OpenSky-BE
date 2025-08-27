@@ -1,0 +1,19 @@
+target/
+build/
+
+*.iml
+.idea/
+
+*.log
+
+# Bỏ Git
+.git
+.gitignore
+
+.env
+.DS_Store
+
+
+*.tmp
+*.bak
+*.swp
