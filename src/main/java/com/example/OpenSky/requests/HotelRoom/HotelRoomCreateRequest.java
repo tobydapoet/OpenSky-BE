@@ -16,6 +16,9 @@ public class HotelRoomCreateRequest {
     @NotBlank(message = "Tên phòng không được bỏ trống")
     private String roomName;
 
+    @NotBlank(message = "Loại phòng không ược bỏ trống")
+    private String roomType;
+
     private String address;
 
     @NotNull(message = "Giá phòng không được bỏ trống")
