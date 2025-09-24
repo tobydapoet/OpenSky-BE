@@ -1,28 +1,17 @@
 package com.example.OpenSky.requests.Session;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Builder;
+import lombok.Data;
 
-
+@Data
+@Builder
 public class SessionRequest {
-    @NotBlank
+    @NotBlank(message = "id người dùng không được để trống")
     private String userId;
 
     @NotBlank
     private String token;
 
-    public String getUserId() {
-        return userId;
-    }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
 }

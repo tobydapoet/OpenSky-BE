@@ -1,56 +1,49 @@
 package com.example.OpenSky.dtos.User;
 
-import jakarta.persistence.Column;
 
-import java.util.Date;
-import java.util.UUID;
+import com.example.OpenSky.entities.User;
+import com.example.OpenSky.enums.UserRole;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Data
+@EqualsAndHashCode(callSuper = true)
+@AllArgsConstructor
 public class UserDto extends RegisterDto{
-    private String phone;
+    private String phoneNumber;
 
     private String citizenId;
 
-    private Date dob;
+    private UserRole role;
 
-    private String avatarUrl;
+    private LocalDate dob;
 
-    public UserDto(String id, String email, String fullName, Date createdAt, String phone, String citizenId, Date dob, String avatarUrl) {
-        super(id, email, null, fullName, createdAt);
-        this.phone = phone;
+    private String avatarURL;
+
+    public static UserDto fromEntity(User user){
+        return new UserDto(
+                user.getId(),
+                user.getEmail(),
+                user.getFullName(),
+                user.getCreatedAt(),
+                user.getPhoneNumber(),
+                user.getCitizenId(),
+                user.getRole(),
+                user.getDob(),
+                user.getAvatarURL()
+        );
+    }
+
+    public UserDto(String id, String email, String fullName, LocalDateTime createdAt, String phoneNumber, String citizenId, UserRole role, LocalDate dob, String avatarURL) {
+        super(id, email, fullName, createdAt);
+        this.phoneNumber = phoneNumber;
         this.citizenId = citizenId;
+        this.role = role;
         this.dob = dob;
-        this.avatarUrl = avatarUrl;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getCitizenId() {
-        return citizenId;
-    }
-
-    public void setCitizenId(String citizenId) {
-        this.citizenId = citizenId;
-    }
-
-    public Date getDob() {
-        return dob;
-    }
-
-    public void setDob(Date dob) {
-        this.dob = dob;
-    }
-
-    public String getAvatarUrl() {
-        return avatarUrl;
-    }
-
-    public void setAvatarUrl(String avatarUrl) {
-        this.avatarUrl = avatarUrl;
+        this.avatarURL = avatarURL;
     }
 }

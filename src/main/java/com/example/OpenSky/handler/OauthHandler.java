@@ -33,11 +33,12 @@ public class OauthHandler implements AuthenticationSuccessHandler {
     )throws IOException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-        UserGoogleCreateRequest dto = new UserGoogleCreateRequest();
-        dto.setEmail(oAuth2User.getAttribute("email"));
-        dto.setAvatarUrl(oAuth2User.getAttribute("picture"));
-        dto.setProviderId(oAuth2User.getAttribute("sub"));
-        dto.setFullName(oAuth2User.getAttribute("name"));
+        UserGoogleCreateRequest dto = UserGoogleCreateRequest.builder()
+                .email(oAuth2User.getAttribute("email"))
+                .avatarURL(oAuth2User.getAttribute("picture"))
+                .providerId(oAuth2User.getAttribute("sub"))
+                .fullName(oAuth2User.getAttribute("name"))
+                .build();
 
         Map<String, String> token = sessionService.googleLogin(dto);
 

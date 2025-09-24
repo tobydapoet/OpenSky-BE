@@ -3,41 +3,25 @@ package com.example.OpenSky.requests.User;
 import com.example.OpenSky.enums.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
+@SuperBuilder
 public class RegisterRequest {
-    @NotBlank
+    @NotBlank(message = "Họ tên không được để trống")
     String fullName;
 
-    @Email
-    @NotBlank
+    @Email(message = "Sai định dạng email")
+    @NotBlank(message = "Email không được để trống")
     String email;
 
-    @NotBlank
+    @NotBlank(message = "Password không được để trống")
     String password;
-
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
 
 }

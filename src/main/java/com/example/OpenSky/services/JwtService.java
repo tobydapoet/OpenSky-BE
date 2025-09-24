@@ -51,4 +51,12 @@ public class JwtService {
                 .parseClaimsJws(token)
                 .getBody();
     }
+
+    public Claims parseRefreshToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(Keys.hmacShaKeyFor(refresh.getBytes()))
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
 }

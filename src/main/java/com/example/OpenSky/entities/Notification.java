@@ -1,6 +1,7 @@
 package com.example.OpenSky.entities;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.data.annotation.CreatedDate;
 
@@ -9,6 +10,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @Entity
+@Data
 @Table(name = "Notification")
 public class Notification {
     @Id
@@ -23,37 +25,7 @@ public class Notification {
     private String description;
 
     @CreationTimestamp
-    private Date createdAt;
+    private LocalDateTime createdAt;
 
-    public String getId() {
-        return id;
-    }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Bill getBill() {
-        return bill;
-    }
-
-    public void setBill(Bill bill) {
-        this.bill = bill;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
 }

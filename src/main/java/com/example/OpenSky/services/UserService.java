@@ -2,14 +2,21 @@ package com.example.OpenSky.services;
 
 import com.example.OpenSky.dtos.User.RegisterDto;
 import com.example.OpenSky.entities.User;
+import com.example.OpenSky.enums.UserRole;
 import com.example.OpenSky.repositories.UserRepository;
 import com.example.OpenSky.requests.User.*;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import javax.management.relation.Role;
+import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -24,6 +31,9 @@ public class UserService {
     @Autowired
     private UploadService uploadService;
 
+    @Autowired
+    private JwtService jwtService;
+
     public Page<User> getAll(int page,int size) {
         Pageable pageable = PageRequest.of(page,size);
         return  userRepository.findAll(pageable);
@@ -34,32 +44,26 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
     }
 
-    public User findByEmail(String email) {
+    public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
-
-    public User findByPhone(String phone) {
-        return userRepository.findByPhone(phone);
+    public Optional<User> findByPhone(String phoneNumber) {
+        return userRepository.findByPhoneNumber(phoneNumber);
     }
 
-    public User findByCitizenId(String citizenId) {
+    public Optional<User> findByCitizenId(String citizenId) {
         return userRepository.findByCitizenId(citizenId);
     }
 
-    public RegisterDto register(RegisterRequest req) {
+    public User register(RegisterRequest req) {
         User user = new User();
-        if(findByEmail(req.getEmail()) != null){
-            throw new RuntimeException("Email already exists");
+        if (findByEmail(req.getEmail()).isPresent()) {
+            throw new RuntimeException("Email đã được sử dụng!");
         }
         user.setEmail(req.getEmail());
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         user.setFullName(req.getFullName());
-        User savedUser =  userRepository.save(user);
-        return new RegisterDto(savedUser.getId(),
-                savedUser.getEmail(),
-                savedUser.getPassword(),
-                savedUser.getFullName(),
-                savedUser.getCreatedAt());
+        return userRepository.save(user);
     }
 
     public User update(String id, UserUpdateRequest req) {
@@ -68,56 +72,92 @@ public class UserService {
         if(req.getFullName() != null){
             user.setFullName(req.getFullName());
         }
-        if (req.getPhone() != null) {
-            User userWithSamePhone = findByPhone(req.getPhone());
-
-            if (userWithSamePhone != null && !userWithSamePhone.getId().equals(id)) {
-                throw new RuntimeException("Phone number already in use!");
+        if (req.getPhoneNumber() != null) {
+            if (findByPhone(req.getPhoneNumber()).isPresent()) {
+                throw new RuntimeException("Số điện thoại này đã được sử dụng!");
             }
-
-            user.setPhone(req.getPhone());
+            user.setPhoneNumber(req.getPhoneNumber());
         }
         if(req.getDob() != null) {
             user.setDob(req.getDob());
         }
-        if(req.getCitizenId() != null) {
-            User userWithSameCitizenId = findByCitizenId(req.getCitizenId());
-
-            if (userWithSameCitizenId != null && !userWithSameCitizenId.getId().equals(id)) {
-                throw new RuntimeException("CitizenId number already in use!");
-            }
-
-            user.setPhone(req.getPhone());
+        if(req.getRole() != null) {
+            user.setRole(req.getRole());
         }
-        if(req.getFile() != null) {
-            if(user.getAvatarUrl() != null) {
-                uploadService.delete(user.getAvatarUrl());
+        if(req.getCitizenId() != null) {
+            if(findByCitizenId(req.getCitizenId()).isPresent()) {
+                throw  new RuntimeException("Mã căn cước công dân này đã được sử dụng!");
             }
-            String uploadImg = uploadService.upload(req.getFile(), "avatar");
-            user.setAvatarUrl(uploadImg);
+            user.setCitizenId(req.getCitizenId());
+        }
+        if(req.getAvatar() != null) {
+            if(user.getAvatarURL() != null) {
+                uploadService.delete(user.getAvatarURL());
+            }
+            String uploadImg = uploadService.upload(req.getAvatar(), "avatar");
+            user.setAvatarURL(uploadImg);
         }
         return userRepository.save(user);
+    }
+
+    public User findCurrentUser(String token) {
+        Claims claims = jwtService.parseAccessToken(token);
+        String userId = claims.get("id", String.class);
+        return findById(userId);
+    }
+
+    public User updateCurrentUser(String token, UserUpdateRequest req) {
+        User user = findCurrentUser(token);
+        return update(user.getId(),req);
+    }
+
+    public Page<User> findByRole(List<UserRole> roles, int page, int size) {
+        Pageable pageable = PageRequest.of(page,size, Sort.by(Sort.Direction.DESC,"createdAt"));
+        return userRepository.findByRoleIn(roles, pageable);
     }
 
     public User createUser(UserCreateRequest req) {
         User user = new User();
-        if(findByEmail(req.getEmail()) != null){
-            throw new RuntimeException("Email already exists");
+        if (findByEmail(req.getEmail()).isPresent()) {
+            throw  new RuntimeException("Email này đã được sử dụng!");
         }
         user.setEmail(req.getEmail());
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         user.setFullName(req.getFullName());
-        user.setRole(req.getRole());
+        if(req.getRole() != null) {
+            user.setRole(req.getRole());
+        }
+        if(req.getDob() != null){
+            user.setDob(req.getDob());
+        }
+        if(req.getAvatar() !=  null){
+
+            String avatar = uploadService.upload(req.getAvatar(), "avatar");
+            user.setAvatarURL(avatar);
+        }
+        if(req.getPhoneNumber() != null){
+            if(findByPhone(req.getPhoneNumber()) != null){
+                throw  new RuntimeException("Số điện thoại này đã được sử dụng!");
+            }
+            user.setPhoneNumber(req.getPhoneNumber());
+        }
+        if(req.getCitizenId() != null){
+            if(findByCitizenId(req.getCitizenId()) != null){
+                throw  new RuntimeException("Số căn cước đã được sử dụng!");
+            }
+            user.setCitizenId(req.getCitizenId());
+        }
         return userRepository.save(user);
     }
 
-    public Page<User> findUsers(String keyword, int page, int size) {
-        Pageable pageable = PageRequest.of(page,size);
-        return userRepository.searchUsers(keyword,pageable);
+    public Page<User> findUsers(String keyword, List<UserRole> roles, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return userRepository.searchUsers(keyword, roles, pageable);
     }
 
     public User login(LoginRequest req) {
-        User user = userRepository.findByEmail(req.getEmail());
+        User user = findByEmail(req.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found!"));
         if(user == null) {
             throw new RuntimeException("User not found!");
         }
@@ -132,7 +172,7 @@ public class UserService {
         User user = new User();
         user.setEmail(req.getEmail());
         user.setFullName(req.getFullName());
-        user.setAvatarUrl(req.getAvatarUrl());
+        user.setAvatarURL(req.getAvatarURL());
         user.setProviderId(req.getProviderId());
         return userRepository.save(user);
     }

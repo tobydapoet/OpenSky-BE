@@ -6,6 +6,7 @@ import com.example.OpenSky.repositories.SessionRepository;
 import com.example.OpenSky.requests.Session.SessionRequest;
 import com.example.OpenSky.requests.User.LoginRequest;
 import com.example.OpenSky.requests.User.UserGoogleCreateRequest;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,9 +28,11 @@ public class SessionService {
                 .orElseThrow(() -> new RuntimeException("Session with id " + id + " not found"));
     }
 
-    public void logout(String id){
-        Session session = findById(id);
-        sessionRepository.delete(session);
+    public Map<String,String> logout(String token) {
+        Claims claims = jwtService.parseRefreshToken(token);
+        String sessionId = claims.getSubject();
+        sessionRepository.deleteById(sessionId);
+        return Map.of("message", "Đăng xuất thành công!");
     }
 
     public Map<String, String> login(LoginRequest req) {
@@ -45,16 +48,14 @@ public class SessionService {
         sessionRepository.save(session);
 
         return Map.of(
-                "access_token", access_token,
-                "refresh_token", refresh_token
+                "accessToken", access_token,
+                "refreshToken", refresh_token
         );
     }
 
     public Map<String,String> googleLogin(UserGoogleCreateRequest req) {
-        User user = userService.findByEmail(req.getEmail());
-        if(user == null){
-            user = userService.createWithGoogle(req);
-        }
+        User user = userService.findByEmail(req.getEmail())
+                .orElseGet(() -> userService.createWithGoogle(req));
         Session session = new Session();
         session.setUser(user);
         session = sessionRepository.saveAndFlush(session);
@@ -63,18 +64,17 @@ public class SessionService {
         session.setToken(refresh_token);
         sessionRepository.save(session);
         return Map.of(
-                "access_token",access_token,
-                "refresh_token",refresh_token
+                "accessToken",access_token,
+                "refreshToken",refresh_token
         );
     }
 
-    public String refresh(String refresh_token, String id) {
-        Session session = sessionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Session with id " + id + " not found"));
-        if(!session.getToken().equals(refresh_token)){
+    public Map<String, String> refresh(String refresh_token) {
+        Session session = sessionRepository.findByToken(refresh_token);
+        if(session == null){
             throw new RuntimeException("Invalid refresh token");
         }
-        return jwtService.generateAccessToken(session);
+        return Map.of("accessToken", jwtService.generateAccessToken(session));
     }
 
 }

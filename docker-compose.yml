@@ -1,23 +1,11 @@
 version: "3.9"
 
 services:
-  OpenSky:
-    build: .
-    image: opensky:latest
-    ports:
-      - "8080:8080"
-    env_file:
-      - .env
-    depends_on:
-      - opensky-sql
-      - opensky-cache
-    networks:
-      - app-network
   opensky-sql:
     image: mysql:8
     container_name: opensky-sql
     environment:
-      MYSQL_ROOT_PASSWORD: ${PASSWORD}
+      MYSQL_ROOT_PASSWORD: 123456
       MYSQL_DATABASE: opensky-db
     ports:
       - "3308:3306"
@@ -25,12 +13,36 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 10
+      timeout: 5s
 
   opensky-cache:
-    image : redis:7
+    image: redis:7
     container_name: opensky-cache
     ports:
       - "6379:6379"
+    networks:
+      - app-network
+
+  OpenSky:
+    build: .
+    image: opensky:latest
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://opensky-sql:3306/opensky-db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_DATA_REDIS_HOST: opensky-cache
+      SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      opensky-sql:
+        condition: service_healthy
+      opensky-cache:
+        condition: service_started
     networks:
       - app-network
 
@@ -39,6 +51,3 @@ networks:
 
 volumes:
   db_data:
-
-
-
